@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity for Day-to-Day Work - Secure Access</title>
+    
+    <!-- MSAL.js library -->
+    <script src="https://alcdn.msauth.net/browser/2.38.2/js/msal-browser.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        /* Login Container */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .login-box {
+            background: white;
+            border-radius: 15px;
+            padding: 50px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        .login-box h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .login-box .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .lock-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        
+        .btn-login {
+            padding: 15px 40px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px;
+        }
+        
+        .btn-login:hover {
+            background: #5568d3;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-login:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .microsoft-logo {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .info-box {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        
+        /* User Info Display */
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .user-info.show {
+            display: block;
+        }
+        
+        .user-info img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        
+        .user-info h3 {
+            color: #495057;
+            margin: 10px 0 5px 0;
+        }
+        
+        .user-info p {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        /* Main Content (Hidden until authenticated) */
+        .main-content {
+            display: none;
+        }
+        
+        .main-content.show {
+            display: block;
+        }
+        
+        /* Header with logout */
+        .auth-header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-badge img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        
+        .user-details {
+            text-align: left;
+        }
+        
+        .user-details .name {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .user-details .email {
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        .btn-logout {
+            padding: 8px 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+        
+        .btn-logout:hover {
+            background: #c82333;
+        }
+        
+        .content-wrapper {
+            max-width: 1000px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        iframe {
+            width: 100%;
+            min-height: 80vh;
+            border: none;
+            border-radius: 0 0 15px 15px;
+        }
+        
+        .config-instructions {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 5px;
+        }
+        
+        .config-instructions h3 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .config-instructions code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #e83e8c;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .config-instructions ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+        
+        .config-instructions li {
+            margin: 8px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .login-box {
+                padding: 30px;
+            }
+            
+            .auth-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .user-badge {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <div class="lock-icon">🔒</div>
+            <h1>Secure Access Required</h1>
+            <p class="subtitle">Cybersecurity for Day-to-Day Work Training</p>
+            
+            <div class="info-box">
+                <strong>🔐 Authentication Required</strong><br>
+                Please sign in with your Microsoft account to access the training module.
+            </div>
+            
+            <div class="config-instructions" id="configInstructions">
+                <h3>⚙️ Configuration Required</h3>
+                <p>To enable Azure AD authentication, please configure the following:</p>
+                <ol>
+                    <li>Register your application in <strong>Azure Portal</strong> → <strong>Azure Active Directory</strong> → <strong>App registrations</strong></li>
+                    <li>Set Redirect URI to: <code id="currentUrl"></code></li>
+                    <li>Enable <strong>ID tokens</strong> in Authentication settings</li>
+                    <li>Copy the <strong>Application (client) ID</strong></li>
+                    <li>Copy the <strong>Directory (tenant) ID</strong></li>
+                    <li>Update the configuration in this file (lines 150-153)</li>
+                </ol>
+                <p style="margin-top: 15px;"><strong>Current Config Status:</strong> <span id="configStatus" style="color: #dc3545;">Not Configured</span></p>
+            </div>
+            
+            <button class="btn-login" id="loginButton" onclick="signIn()">
+                <svg class="microsoft-logo" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="11" height="11" fill="#F25022"/>
+                    <rect x="12" width="11" height="11" fill="#7FBA00"/>
+                    <rect y="12" width="11" height="11" fill="#00A4EF"/>
+                    <rect x="12" y="12" width="11" height="11" fill="#FFB900"/>
+                </svg>
+                Sign in with Microsoft
+            </button>
+            
+            <div class="loading" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>Authenticating...</p>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+            
+            <div class="user-info" id="userInfo">
+                <img id="userPhoto" src="" alt="User Photo" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><circle cx=%2212%22 cy=%228%22 r=%224%22 fill=%22%23666%22/><path d=%22M12 14c-4 0-8 2-8 4v2h16v-2c0-2-4-4-8-4z%22 fill=%22%23666%22/></svg>'">
+                <h3 id="userName"></h3>
+                <p id="userEmail"></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content (Training Module) -->
+    <div class="main-content" id="mainContent">
+        <div class="auth-header">
+            <div class="user-badge">
+                <img id="headerUserPhoto" src="" alt="User" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><circle cx=%2212%22 cy=%228%22 r=%224%22 fill=%22%23666%22/><path d=%22M12 14c-4 0-8 2-8 4v2h16v-2c0-2-4-4-8-4z%22 fill=%22%23666%22/></svg>'">
+                <div class="user-details">
+                    <div class="name" id="headerUserName"></div>
+                    <div class="email" id="headerUserEmail"></div>
+                </div>
+            </div>
+            <button class="btn-logout" onclick="signOut()">Sign Out</button>
+        </div>
+        
+        <div class="content-wrapper">
+            <iframe id="trainingFrame" src="cybersecurity-module.html"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // AZURE AD CONFIGURATION
+        // ============================================================================
+        // TODO: Replace these values with your Azure AD app registration details
+        
+        const msalConfig = {
+            auth: {
+                clientId: "YOUR_CLIENT_ID_HERE",  // Replace with your Application (client) ID
+                authority: "https://login.microsoftonline.com/YOUR_TENANT_ID_HERE", // Replace YOUR_TENANT_ID_HERE
+                redirectUri: window.location.origin + window.location.pathname, // Current page URL
+            },
+            cache: {
+                cacheLocation: "localStorage", // This configures where your cache will be stored
+                storeAuthStateInCookie: false, // Set to true for IE 11 or Edge
+            }
+        };
+
+        // Permissions to request
+        const loginRequest = {
+            scopes: ["User.Read"] // Basic profile information
+        };
+
+        // ============================================================================
+        // MSAL INITIALIZATION
+        // ============================================================================
+        
+        let msalInstance;
+        let currentAccount = null;
+
+        function initializeMsal() {
+            try {
+                msalInstance = new msal.PublicClientApplication(msalConfig);
+                
+                // Handle redirect response
+                msalInstance.handleRedirectPromise()
+                    .then(handleResponse)
+                    .catch(err => {
+                        console.error("Redirect error:", err);
+                        showError("Authentication error: " + err.message);
+                    });
+                
+                // Check if user is already signed in
+                checkAccount();
+                
+                // Update config status
+                updateConfigStatus();
+                
+            } catch (error) {
+                console.error("MSAL initialization error:", error);
+                showError("Configuration error: Please check your Azure AD settings.");
+            }
+        }
+
+        function updateConfigStatus() {
+            const currentUrlSpan = document.getElementById('currentUrl');
+            const configStatus = document.getElementById('configStatus');
+            const configInstructions = document.getElementById('configInstructions');
+            
+            currentUrlSpan.textContent = window.location.href;
+            
+            // Check if configuration is placeholder
+            if (msalConfig.auth.clientId === "YOUR_CLIENT_ID_HERE" || 
+                msalConfig.auth.authority.includes("YOUR_TENANT_ID_HERE")) {
+                configStatus.textContent = "⚠️ Not Configured";
+                configStatus.style.color = "#dc3545";
+                configInstructions.style.display = "block";
+            } else {
+                configStatus.textContent = "✅ Configured";
+                configStatus.style.color = "#28a745";
+                configInstructions.style.display = "none";
+            }
+        }
+
+        function checkAccount() {
+            const accounts = msalInstance.getAllAccounts();
+            if (accounts.length > 0) {
+                currentAccount = accounts[0];
+                showMainContent();
+            }
+        }
+
+        function handleResponse(response) {
+            if (response !== null) {
+                currentAccount = response.account;
+                showMainContent();
+            }
+        }
+
+        // ============================================================================
+        // AUTHENTICATION FUNCTIONS
+        // ============================================================================
+        
+        async function signIn() {
+            // Check configuration
+            if (msalConfig.auth.clientId === "YOUR_CLIENT_ID_HERE" || 
+                msalConfig.auth.authority.includes("YOUR_TENANT_ID_HERE")) {
+                showError("Please configure your Azure AD application settings first. See instructions above.");
+                return;
+            }
+            
+            showLoading(true);
+            hideError();
+            
+            try {
+                // Try popup login first
+                const loginResponse = await msalInstance.loginPopup(loginRequest);
+                currentAccount = loginResponse.account;
+                showMainContent();
+            } catch (error) {
+                console.error("Login error:", error);
+                
+                // If popup is blocked, try redirect
+                if (error.name === "BrowserAuthError" && error.message.includes("popup")) {
+                    console.log("Popup blocked, trying redirect...");
+                    await msalInstance.loginRedirect(loginRequest);
+                } else {
+                    showError("Login failed: " + error.message);
+                    showLoading(false);
+                }
+            }
+        }
+
+        function signOut() {
+            const logoutRequest = {
+                account: currentAccount
+            };
+            
+            msalInstance.logoutPopup(logoutRequest)
+                .then(() => {
+                    currentAccount = null;
+                    showLoginScreen();
+                })
+                .catch(error => {
+                    console.error("Logout error:", error);
+                    // Try redirect logout if popup fails
+                    msalInstance.logoutRedirect(logoutRequest);
+                });
+        }
+
+        async function getUserProfile() {
+            if (!currentAccount) return null;
+            
+            try {
+                // Get access token
+                const tokenResponse = await msalInstance.acquireTokenSilent({
+                    scopes: ["User.Read"],
+                    account: currentAccount
+                });
+                
+                // Call Microsoft Graph API to get user profile
+                const response = await fetch("https://graph.microsoft.com/v1.0/me", {
+                    headers: {
+                        "Authorization": "Bearer " + tokenResponse.accessToken
+                    }
+                });
+                
+                if (response.ok) {
+                    return await response.json();
+                }
+            } catch (error) {
+                console.error("Error getting user profile:", error);
+            }
+            
+            return null;
+        }
+
+        async function getUserPhoto() {
+            if (!currentAccount) return null;
+            
+            try {
+                // Get access token
+                const tokenResponse = await msalInstance.acquireTokenSilent({
+                    scopes: ["User.Read"],
+                    account: currentAccount
+                });
+                
+                // Call Microsoft Graph API to get user photo
+                const response = await fetch("https://graph.microsoft.com/v1.0/me/photo/$value", {
+                    headers: {
+                        "Authorization": "Bearer " + tokenResponse.accessToken
+                    }
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    return URL.createObjectURL(blob);
+                }
+            } catch (error) {
+                console.log("No profile photo available");
+            }
+            
+            return null;
+        }
+
+        // ============================================================================
+        // UI FUNCTIONS
+        // ============================================================================
+        
+        async function showMainContent() {
+            showLoading(true);
+            
+            // Get user profile information
+            const profile = await getUserProfile();
+            const photoUrl = await getUserPhoto();
+            
+            const displayName = profile?.displayName || currentAccount.name || currentAccount.username;
+            const email = profile?.mail || profile?.userPrincipalName || currentAccount.username;
+            
+            // Update header
+            document.getElementById('headerUserName').textContent = displayName;
+            document.getElementById('headerUserEmail').textContent = email;
+            
+            if (photoUrl) {
+                document.getElementById('headerUserPhoto').src = photoUrl;
+            }
+            
+            // Hide login, show main content
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('mainContent').classList.add('show');
+            
+            showLoading(false);
+            
+            // Log authentication event (for tracking)
+            console.log('User authenticated:', {
+                name: displayName,
+                email: email,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Store authentication data for completion tracking
+            sessionStorage.setItem('authenticated_user', JSON.stringify({
+                name: displayName,
+                email: email,
+                authTime: new Date().toISOString()
+            }));
+        }
+
+        function showLoginScreen() {
+            document.getElementById('loginContainer').style.display = 'flex';
+            document.getElementById('mainContent').classList.remove('show');
+            document.getElementById('userInfo').classList.remove('show');
+            
+            // Clear session
+            sessionStorage.removeItem('authenticated_user');
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loadingSpinner');
+            const loginButton = document.getElementById('loginButton');
+            
+            if (show) {
+                loading.classList.add('show');
+                loginButton.disabled = true;
+            } else {
+                loading.classList.remove('show');
+                loginButton.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMsal();
+        });
+        
+        // Handle messages from iframe (for completion tracking)
+        window.addEventListener('message', function(event) {
+            // Verify origin for security
+            if (event.origin !== window.location.origin) return;
+            
+            if (event.data.type === 'TRAINING_COMPLETED') {
+                // Get authenticated user info
+                const user = JSON.parse(sessionStorage.getItem('authenticated_user') || '{}');
+                
+                // Log completion event
+                console.log('Training completed by:', {
+                    user: user,
+                    score: event.data.score,
+                    completionTime: new Date().toISOString()
+                });
+                
+                // Here you could send this data to your backend for tracking
+                // Example: sendCompletionToBackend(user, event.data.score);
+            }
+        });
+    </script>
+</body>
+</html>

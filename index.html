@@ -139,6 +139,21 @@
         .file-item strong {
             color: #667eea;
         }
+        .btn-auth {
+            background: #0078d4;
+        }
+        .btn-auth:hover {
+            background: #106ebe;
+        }
+        .auth-badge {
+            display: inline-block;
+            background: #d4edda;
+            color: #155724;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -180,6 +195,7 @@
         
         <div class="btn-group">
             <a href="cybersecurity-module.html" class="btn">🚀 Start Interactive Training</a>
+            <a href="cybersecurity-module-auth.html" class="btn btn-auth">🔐 Start with Azure AD Login <span class="auth-badge">NEW</span></a>
             <a href="cybersecurity-learning-module.md" class="btn btn-secondary">📄 View Content (MD)</a>
         </div>
         
@@ -189,7 +205,13 @@
                 <strong>cybersecurity-module.html</strong> - Interactive training with quizzes and certificate
             </div>
             <div class="file-item">
+                <strong>cybersecurity-module-auth.html</strong> - 🔐 Interactive training with Azure AD authentication <span class="auth-badge">NEW</span>
+            </div>
+            <div class="file-item">
                 <strong>cybersecurity-learning-module.md</strong> - Complete content in Markdown format
+            </div>
+            <div class="file-item">
+                <strong>AZURE_AD_SETUP.md</strong> - 🔧 Azure AD configuration guide <span class="auth-badge">NEW</span>
             </div>
             <div class="file-item">
                 <strong>INSTRUCTOR_GUIDE.md</strong> - Teaching strategies and facilitation tips
@@ -204,6 +226,10 @@
         
         <div class="info-box">
             <strong>💡 Tip:</strong> For the best experience, use the interactive HTML module. It includes automatic grading, instant feedback, and a printable certificate upon completion.
+        </div>
+        
+        <div class="info-box" style="background: #d1ecf1; border-left-color: #0c5460;">
+            <strong>🔐 Enterprise Authentication:</strong> Use the Azure AD authenticated version to enforce user sign-in and track training completion by user. See <a href="AZURE_AD_SETUP.md" style="color: #0c5460; text-decoration: underline;">AZURE_AD_SETUP.md</a> for configuration instructions.
         </div>
     </div>
 </body>
